@@ -46,8 +46,8 @@ jobs:
       - name: Verify artifact
         if: steps.sync.outputs.run_build == 'true'
         run: |
-          ls -lh build/libs/*-all.jar
-          sha256sum build/libs/*-all.jar
+          ls -lh bin/*.jar
+          sha256sum bin/*.jar
 
       - name: Commit sync and push
         id: publish
@@ -65,7 +65,7 @@ jobs:
           tag_name: ${{ steps.sync.outputs.tag_name }}
           name: ${{ steps.sync.outputs.release_name }}
           target_commitish: ${{ steps.publish.outputs.head_sha }}
-          files: build/libs/*-all.jar
+          files: bin/*.jar
           body: |
             Auto-generated build from upstream Auxilor/EcoEnchants @ ${{ steps.sync.outputs.upstream_sha }}
         env:
@@ -77,6 +77,7 @@ jobs:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           REL_NAME: ${{ steps.sync.outputs.release_name }}
           TAG_NAME: ${{ steps.sync.outputs.tag_name }}
+          VERSION: ${{ steps.sync.outputs.gradle_version }}
           UP_SHA: ${{ steps.sync.outputs.upstream_sha }}
         run: |
           if [ -z "${DISCORD_WEBHOOK_URL:-}" ]; then
@@ -85,19 +86,21 @@ jobs:
           fi
           rel_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${TAG_NAME}"
           jq -n \
-            --arg title "eco — ${REL_NAME}" \
+            --arg title "EcoEnchants Updated — v${REL_NAME}" \
             --arg url "$rel_url" \
             --arg tag "$TAG_NAME" \
             --arg sha "$UP_SHA" \
+            --arg ver "$VERSION" \
             --arg rep "$GITHUB_REPOSITORY" \
             '{
               embeds: [{
                 title: $title,
                 url: $url,
-                color: 5814783,
+                color: 5763719,
                 fields: [
                   { name: "Tag", value: $tag, inline: true },
-                  { name: "Upstream SHA", value: $sha, inline: false }
+                  { name: "Upstream SHA", value: ("`" + $sha + "`"), inline: false },
+                  { name: "Direct DL", value: ("https://github.com/" + $rep + "/releases/download/" + $tag + "/EcoEnchants.v" + $ver + ".jar"), inline: false }
                 ],
                 footer: { text: ("GitHub Actions · " + $rep) }
               }]
