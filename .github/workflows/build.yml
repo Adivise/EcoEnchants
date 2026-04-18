@@ -41,7 +41,7 @@ jobs:
 
       - name: Build
         if: steps.sync.outputs.run_build == 'true'
-        run: ./gradlew clean shadowJar --no-daemon
+        run: ./gradlew clean build shadowJar --no-daemon
 
       - name: Verify artifact
         if: steps.sync.outputs.run_build == 'true'
