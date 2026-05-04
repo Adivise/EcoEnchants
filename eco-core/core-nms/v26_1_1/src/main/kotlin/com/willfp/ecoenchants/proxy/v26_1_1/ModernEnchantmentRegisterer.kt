@@ -1,12 +1,12 @@
-package com.willfp.ecoenchants.proxy.v1_21_11
+package com.willfp.ecoenchants.proxy.v26_1_1
 
 import com.willfp.ecoenchants.enchant.EcoEnchant
 import com.willfp.ecoenchants.enchant.EcoEnchants
 import com.willfp.ecoenchants.enchant.impl.EcoEnchantBase
 import com.willfp.ecoenchants.enchant.registration.ModernEnchantmentRegistererProxy
-import com.willfp.ecoenchants.proxy.v1_21_11.registration.vanillaEcoEnchantsEnchantment
 import com.willfp.ecoenchants.proxy.v1_21_8.registration.EcoEnchantsCraftEnchantment
 import com.willfp.ecoenchants.proxy.v1_21_8.registration.ModifiedVanillaCraftEnchantment
+import com.willfp.ecoenchants.proxy.v26_1_1.registration.vanillaEcoEnchantsEnchantment
 import io.papermc.paper.registry.entry.RegistryTypeMapper
 import io.papermc.paper.registry.legacy.DelayedRegistry
 import net.minecraft.core.Holder
@@ -20,6 +20,7 @@ import org.bukkit.craftbukkit.CraftRegistry
 import org.bukkit.craftbukkit.CraftServer
 import org.bukkit.craftbukkit.util.CraftNamespacedKey
 import org.bukkit.enchantments.Enchantment
+import org.jspecify.annotations.Nullable
 import java.lang.reflect.Modifier
 import java.util.IdentityHashMap
 import java.util.function.BiFunction
@@ -34,15 +35,19 @@ private val bukkitRegistry: org.bukkit.Registry<Enchantment>
 
 class ModernEnchantmentRegisterer : ModernEnchantmentRegistererProxy {
     private val frozenField = MappedRegistry::class.java
-        .getDeclaredField("frozen")
+        .declaredFields
+        .filter { it.type.isPrimitive }[0]
         .apply { isAccessible = true }
 
     private val allTags = MappedRegistry::class.java
-        .getDeclaredField("allTags")
+        .declaredFields
+        .filter { it.type.name.contains("TagSet") }[0]
         .apply { isAccessible = true }
 
     private val unregisteredIntrusiveHoldersField = MappedRegistry::class.java
-        .getDeclaredField("unregisteredIntrusiveHolders")
+        .declaredFields
+        .filter { it.type == Map::class.java }
+        .filter { it.annotatedType.isAnnotationPresent(Nullable::class.java) }[0]
         .apply { isAccessible = true }
 
     private val minecraftToBukkit = CraftRegistry::class.java
@@ -134,10 +139,7 @@ class ModernEnchantmentRegisterer : ModernEnchantmentRegistererProxy {
             vanillaEnchantment
         )
 
-        val holder = enchantmentRegistry[CraftNamespacedKey.toMinecraft(enchant.enchantmentKey)]
-            .orElseThrow { IllegalStateException("Enchantment ${enchant.id} wasn't registered") }
-
-        return EcoEnchantsCraftEnchantment(enchant, holder)
+        return register(enchant)
     }
 
     override fun unregister(enchant: EcoEnchant) {
