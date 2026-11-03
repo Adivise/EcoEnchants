@@ -5,9 +5,11 @@ import com.willfp.eco.util.NumberUtils
 import com.willfp.ecoenchants.enchant.DiscoveryType
 import com.willfp.ecoenchants.enchant.EcoEnchants
 import com.willfp.ecoenchants.enchant.infiniteIfNegative
+import com.willfp.ecoenchants.enchant.removeEnchantsReplacedBy
 import com.willfp.ecoenchants.plugin
 import com.willfp.ecoenchants.target.EnchantmentTargets.isEnchantable
 import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Item
 import org.bukkit.event.EventHandler
@@ -52,6 +54,7 @@ object LootSupport : Listener {
         }
 
         val enchants = item.fast().getEnchants(true)
+        val added = mutableListOf<Enchantment>()
 
         var multiplier = 0.01
 
@@ -66,7 +69,7 @@ object LootSupport : Listener {
                 continue
             }
 
-            if (!enchantment.canEnchantItem(item, enchants.keys)) {
+            if (!enchantment.canEnchantItem(item, enchants)) {
                 continue
             }
 
@@ -74,7 +77,7 @@ object LootSupport : Listener {
                 continue
             }
 
-            if (enchants.size > plugin.configYml.getInt("anvil.enchant-limit").infiniteIfNegative()) {
+            if (enchants.size >= plugin.configYml.getInt("anvil.enchant-limit").infiniteIfNegative()) {
                 break
             }
 
@@ -84,9 +87,10 @@ object LootSupport : Listener {
             val levelPart2 = NumberUtils.triangularDistribution(0.0, 1.0, levelPart1)
             val level = ceil(levelPart2 * maxLevel).coerceIn(1.0..maxLevel.toDouble()).toInt()
 
-            multiplier /= plugin.configYml.getDouble("loot.reduction")
+            multiplier /= plugin.configYml.getDouble("loot.reduction").takeIf { it > 0 } ?: 1.0
 
             enchants[enchantment.enchantment] = level
+            added += enchantment.enchantment
         }
 
         val meta = item.itemMeta
@@ -95,6 +99,7 @@ object LootSupport : Listener {
         } else {
             enchants.forEach { (enchant, level) -> meta.addEnchant(enchant, level, true) }
         }
+        meta.removeEnchantsReplacedBy(added)
         item.itemMeta = meta
     }
 }

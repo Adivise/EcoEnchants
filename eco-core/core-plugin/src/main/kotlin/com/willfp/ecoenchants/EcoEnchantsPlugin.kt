@@ -29,6 +29,8 @@ import com.willfp.ecoenchants.integrations.EnchantRegistrations
 import com.willfp.ecoenchants.integrations.plugins.CMIIntegration
 import com.willfp.ecoenchants.integrations.plugins.EssentialsIntegration
 import com.willfp.ecoenchants.libreforge.EffectApplyRandomEnchant
+import com.willfp.ecoenchants.libreforge.EffectRemoveThisEnchant
+import com.willfp.ecoenchants.mechanics.AnvilRequirementSupport
 import com.willfp.ecoenchants.mechanics.EcoEnchantsAnvilHandler
 import com.willfp.ecoenchants.mechanics.EnchantingTableSupport
 import com.willfp.ecoenchants.mechanics.ExtraItemSupport
@@ -36,7 +38,6 @@ import com.willfp.ecoenchants.mechanics.GrindstoneSupport
 import com.willfp.ecoenchants.mechanics.LootSupport
 import com.willfp.ecoenchants.mechanics.VillagerSupport
 import com.willfp.ecoenchants.rarity.EnchantmentRarities
-import com.willfp.ecoenchants.target.EnchantFinder.clearEnchantmentCache
 import com.willfp.ecoenchants.target.EnchantHolderProvider
 import com.willfp.ecoenchants.target.EnchantmentTargets
 import com.willfp.ecoenchants.type.EnchantmentTypes
@@ -46,8 +47,6 @@ import com.willfp.libreforge.loader.LibreforgePlugin
 import com.willfp.libreforge.loader.configs.ConfigCategory
 import com.willfp.libreforge.registerHolderProvider
 import com.willfp.libreforge.registerHolderPlaceholderProvider
-import com.willfp.libreforge.registerSpecificRefreshFunction
-import org.bukkit.entity.LivingEntity
 import org.bukkit.event.Listener
 
 internal lateinit var plugin: EcoEnchantsPlugin
@@ -76,12 +75,9 @@ class EcoEnchantsPlugin : LibreforgePlugin() {
 
     override fun handleEnable() {
         Effects.register(EffectApplyRandomEnchant)
+        Effects.register(EffectRemoveThisEnchant)
 
         registerHolderProvider(EnchantHolderProvider)
-
-        registerSpecificRefreshFunction<LivingEntity> {
-            it.clearEnchantmentCache()
-        }
 
         registerHolderPlaceholderProvider<EcoEnchantLevel> { it, _ ->
             listOf(
@@ -135,7 +131,8 @@ class EcoEnchantsPlugin : LibreforgePlugin() {
             EnchantingTableSupport,
             LootSupport,
             LoreConversion,
-            GrindstoneSupport
+            GrindstoneSupport,
+            AnvilRequirementSupport
         )
     }
 
